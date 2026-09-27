@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Movies</title>
+</head>
+<body>
+<main>
+    <h1>Movies</h1>
+
+    <h2>Search</h2>
+    <form th:action="@{/movies}" method="get">
+        <label for="q">Title</label>
+        <input id="q" name="q" type="search" th:value="${q}">
+
+        <label for="tagId">Tag</label>
+        <select id="tagId" name="tagId">
+            <option value="">All tags</option>
+            <option th:each="tag : ${tags}"
+                    th:value="${tag.id}"
+                    th:text="${tag.name}"
+                    th:selected="${tag.id == tagId}">
+            </option>
+        </select>
+
+        <button type="submit">Search</button>
+        <a th:href="@{/movies}">Clear</a>
+    </form>
+
+    <h2>Movie list</h2>
+    <p th:if="${movies.isEmpty()}">No movies found.</p>
+
+    <table th:unless="${movies.isEmpty()}">
+        <thead>
+        <tr>
+            <th>Title</th>
+            <th>Release date</th>
+            <th>Tags</th>
+            <th>Action</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="movie : ${movies.content}">
+            <td th:text="${movie.title}">Example title</td>
+            <td th:text="${movie.releaseDate}">2020-01-01</td>
+            <td>
+                <span th:each="tag, status : ${movie.tags}">
+                    <span th:text="${tag.name}">Tag</span><span th:unless="${status.last}">, </span>
+                </span>
+            </td>
+            <td>
+                <form th:action="@{/movies/{id}/delete(id=${movie.id})}"
+                      method="post">
+                    <button type="submit">Delete</button>
+                </form>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+
+    <nav th:if="${movies.totalPages > 1}" aria-label="Movie pages">
+        <a th:if="${movies.hasPrevious()}"
+           th:href="@{/movies(page=${movies.number - 1}, q=${q}, tagId=${tagId})}">
+            Previous
+        </a>
+
+        <span th:text="'Page ' + ${movies.number + 1} + ' of ' + ${movies.totalPages}">
+            Page 1 of 2
+        </span>
+
+        <a th:if="${movies.hasNext()}"
+           th:href="@{/movies(page=${movies.number + 1}, q=${q}, tagId=${tagId})}">
+            Next
+        </a>
+    </nav>
+
+    <h2>Add a movie</h2>
+    <form th:action="@{/movies}" method="post">
+        <div>
+            <label for="title">Title</label>
+            <input id="title" name="title" type="text" required>
+        </div>
+
+        <div>
+            <label for="releaseDate">Release date</label>
+            <input id="releaseDate" name="releaseDate" type="date" required>
+        </div>
+
+        <div>
+            <label for="tagIds">Tags</label>
+            <select id="tagIds" name="tagIds" multiple>
+                <option th:each="tag : ${tags}"
+                        th:value="${tag.id}"
+                        th:text="${tag.name}">
+                </option>
+            </select>
+            <small>Use Ctrl to select multiple tags.</small>
+        </div>
+
+        <button type="submit">Add movie</button>
+    </form>
+</main>
+</body>
+</html>
