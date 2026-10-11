@@ -23,9 +23,17 @@ public class MovieService {
         this.tagService = tagService;
     }
 
-    public Page<Movie> getMovies(int page) {
-        return movieRepository.findAll(
-                PageRequest.of(page, 5, Sort.by("title").ascending())
+    public Page<Movie> getMovies(int page, String q, UUID tagId) {
+        String searchText = q == null ? "" : q.strip();
+
+        return movieRepository.search(
+                searchText,
+                tagId,
+                PageRequest.of(
+                        Math.max(page, 0),
+                        25,
+                        Sort.by("title").ascending().and(Sort.by("id").ascending())
+                )
         );
     }
 
@@ -43,5 +51,13 @@ public class MovieService {
         movie.setTags(tagService.getTagsByIds(tagIds));
 
         movieRepository.save(movie);
+    }
+
+    @Transactional
+    public void deleteMovie(UUID id) {
+        Movie movie = movieRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Movie does not exist."));
+
+        movieRepository.delete(movie);
     }
 }

@@ -19,6 +19,7 @@ public class Movie {
     private LocalDate releaseDate;
 
     @ManyToMany
+    @OrderBy("name ASC")
     @JoinTable(
             name = "movie_tag",
             joinColumns = @JoinColumn(name = "movie_id"),

@@ -6,6 +6,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
@@ -27,12 +28,14 @@ public class MovieController {
     @GetMapping("/movies")
     public String listMovies(
             @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "") String q,
+            @RequestParam(required = false) UUID tagId,
             Model model) {
 
-        model.addAttribute("movies", movieService.getMovies(page));
+        model.addAttribute("movies", movieService.getMovies(page, q, tagId));
         model.addAttribute("tags", tagService.getAllTags());
-        model.addAttribute("q", "");
-        model.addAttribute("tagId", null);
+        model.addAttribute("q", q);
+        model.addAttribute("tagId", tagId);
 
         return "movies";
     }
@@ -45,6 +48,13 @@ public class MovieController {
             @RequestParam(required = false) Set<UUID> tagIds) {
 
         movieService.addMovie(title, releaseDate, tagIds);
+
+        return "redirect:/movies";
+    }
+
+    @PostMapping("/movies/{id}/delete")
+    public String deleteMovie(@PathVariable UUID id) {
+        movieService.deleteMovie(id);
 
         return "redirect:/movies";
     }
