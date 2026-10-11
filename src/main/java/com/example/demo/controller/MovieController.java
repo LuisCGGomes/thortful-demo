@@ -2,10 +2,16 @@ package com.example.demo.controller;
 
 import com.example.demo.service.MovieService;
 import com.example.demo.service.TagService;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+
+import java.time.LocalDate;
+import java.util.Set;
+import java.util.UUID;
 
 @Controller
 public class MovieController {
@@ -29,5 +35,17 @@ public class MovieController {
         model.addAttribute("tagId", null);
 
         return "movies";
+    }
+
+    @PostMapping("/movies")
+    public String addMovie(
+            @RequestParam String title,
+            @RequestParam
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate releaseDate,
+            @RequestParam(required = false) Set<UUID> tagIds) {
+
+        movieService.addMovie(title, releaseDate, tagIds);
+
+        return "redirect:/movies";
     }
 }
