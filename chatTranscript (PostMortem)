@@ -1,0 +1,383 @@
+create for me a thymeleaf template that shows the following:
+list with movie title, date of release, tags
+A small basic form to add new movies
+at the end of each row in the list, a button to delete said row
+a pagination navigation under the list, but above the form
+You stopped after 27s
+I’ll make a basic Thymeleaf page with the movie list, delete buttons, pagination, and an add form, using simple Spring MVC route assumptions.
+
+Listing project files and location
+
+The template will expect a paginated moviePage, a newMovie form object, and availableTags. I’ll include empty-list handling and use POST forms for adding and deleting movies. I’m using the Library skill to make the HTML file available for download.
+
+i just need the actual html, don't worry about function
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Movies</title>
+    <style>
+        body {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 0 20px;
+            font-family: Arial, sans-serif;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+            text-align: left;
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 4px 8px;
+            margin: 2px;
+            border-radius: 4px;
+            background: #eee;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin: 24px 0;
+        }
+
+        .pagination a {
+            padding: 6px 10px;
+            text-decoration: none;
+            color: #1565c0;
+        }
+
+        .pagination a.active {
+            font-weight: bold;
+            background: #eee;
+        }
+
+        .movie-form {
+            display: grid;
+            gap: 12px;
+            max-width: 400px;
+        }
+
+        .movie-form label {
+            display: grid;
+            gap: 6px;
+        }
+
+        input, select, button {
+            padding: 8px;
+            font: inherit;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
+        .delete-button {
+            color: #b71c1c;
+        }
+    </style>
+</head>
+<body>
+    <h1>Movies</h1>
+
+    <table>
+        <thead>
+            <tr>
+                <th scope="col">Title</th>
+                <th scope="col">Release date</th>
+                <th scope="col">Tags</th>
+                <th scope="col">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="movie : ${moviePage.content}">
+                <td th:text="${movie.title}">Movie title</td>
+                <td th:text="${movie.releaseDate}">2026-01-01</td>
+                <td>
+                    <span class="tag"
+                          th:each="tag : ${movie.tags}"
+                          th:text="${tag.name}">
+                        Drama
+                    </span>
+                </td>
+                <td>
+                    <form th:action="@{/movies/{id}/delete(id=${movie.id})}"
+                          method="post">
+                        <button class="delete-button" type="submit">
+                            Delete
+                        </button>
+                    </form>
+                </td>
+            </tr>
+
+            <tr th:if="${moviePage.empty}">
+                <td colspan="4">No movies found.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <nav class="pagination"
+         aria-label="Movie pages"
+         th:if="${moviePage.totalPages > 1}">
+
+        <a th:if="${!moviePage.first}"
+           th:href="@{/movies(page=${moviePage.number - 1},size=${moviePage.size})}">
+            Previous
+        </a>
+
+        <a th:each="pageNumber : ${#numbers.sequence(0, moviePage.totalPages - 1)}"
+           th:href="@{/movies(page=${pageNumber},size=${moviePage.size})}"
+           th:text="${pageNumber + 1}"
+           th:classappend="${pageNumber == moviePage.number} ? 'active' : ''"
+           th:attr="aria-current=${pageNumber == moviePage.number ? 'page' : null}">
+            1
+        </a>
+
+        <a th:if="${!moviePage.last}"
+           th:href="@{/movies(page=${moviePage.number + 1},size=${moviePage.size})}">
+            Next
+        </a>
+    </nav>
+
+    <h2>Add a movie</h2>
+
+    <form class="movie-form"
+          th:action="@{/movies}"
+          th:object="${newMovie}"
+          method="post">
+
+        <label for="title">
+            Title
+            <input id="title" type="text" th:field="*{title}" required>
+        </label>
+
+        <label for="releaseDate">
+            Release date
+            <input id="releaseDate" type="date" th:field="*{releaseDate}" required>
+        </label>
+
+        <label for="tagIds">
+            Tags
+            <select id="tagIds" th:field="*{tagIds}" multiple size="4">
+                <option th:each="tag : ${availableTags}"
+                        th:value="${tag.id}"
+                        th:text="${tag.name}">
+                    Drama
+                </option>
+            </select>
+        </label>
+
+        <button type="submit">Add movie</button>
+    </form>
+</body>
+</html>
+
+Generate for me a sql query to make 10 random movies, based on the following java classes:
+
+
+package com.example.demo.entity;
+
+import jakarta.persistence.*;
+
+import java.util.UUID;
+
+@Entity
+public class Tag {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
+
+    @Column(nullable = false, unique = true)
+    private String name;
+
+    protected Tag(){
+
+    }
+
+    public Tag(String name){
+        this.name = name;
+    }
+
+    public UUID getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+}\
+
+
+
+
+package com.example.demo.entity;
+
+import jakarta.persistence.*;
+import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
+
+@Entity
+public class Movie {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
+
+    @Column (nullable = false)
+    private String title;
+
+    private LocalDate releaseDate;
+
+    @ManyToMany
+    @OrderBy("name ASC")
+    @JoinTable(
+            name = "movie_tag",
+            joinColumns = @JoinColumn(name = "movie_id"),
+            inverseJoinColumns = @JoinColumn (name = "tag_id")
+    )
+    private Set<Tag> tags = new HashSet<>();
+
+    protected Movie(){
+
+    }
+
+    public Movie(String title, LocalDate releaseDate){
+        this.title = title;
+        this.releaseDate = releaseDate;
+    }
+
+    public UUID getId() {
+        return id;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public LocalDate getReleaseDate() {
+        return releaseDate;
+    }
+
+    public void setReleaseDate(LocalDate releaseDate) {
+        this.releaseDate = releaseDate;
+    }
+
+    public Set<Tag> getTags() {
+        return tags;
+    }
+
+    public void setTags(Set<Tag> tags) {
+        this.tags = tags;
+    }
+}\
+
+…
+Assuming H2 and Spring Boot’s default column naming (release_date), this inserts 10 fictional movies, then assigns tags using existing tag names.
+
+INSERT INTO movie (id, title, release_date)
+VALUES
+    (CAST('20000000-0000-4000-8000-000000000001' AS UUID), 'The Last Signal',       DATE '2023-04-14'),
+    (CAST('20000000-0000-4000-8000-000000000002' AS UUID), 'Midnight in Lisbon',    DATE '2021-09-03'),
+    (CAST('20000000-0000-4000-8000-000000000003' AS UUID), 'Beyond the Red Planet', DATE '2024-06-21'),
+    (CAST('20000000-0000-4000-8000-000000000004' AS UUID), 'The Forgotten Map',     DATE '2019-11-08'),
+    (CAST('20000000-0000-4000-8000-000000000005' AS UUID), 'A Quiet Goodbye',       DATE '2022-02-18'),
+    (CAST('20000000-0000-4000-8000-000000000006' AS UUID), 'Shadows Under Water',   DATE '2020-07-10'),
+    (CAST('20000000-0000-4000-8000-000000000007' AS UUID), 'Orbit Zero',            DATE '2025-01-24'),
+    (CAST('20000000-0000-4000-8000-000000000008' AS UUID), 'The Glass Garden',      DATE '2018-05-11'),
+    (CAST('20000000-0000-4000-8000-000000000009' AS UUID), 'Chasing the Horizon',   DATE '2023-08-25'),
+    (CAST('20000000-0000-4000-8000-000000000010' AS UUID), 'Letters from Tomorrow', DATE '2024-12-06');
+
+INSERT INTO movie_tag (movie_id, tag_id)
+SELECT CAST(seed.movie_id AS UUID), tag.id
+FROM (
+    VALUES
+        ('20000000-0000-4000-8000-000000000001', 'Sci-Fi'),
+        ('20000000-0000-4000-8000-000000000001', 'Mystery'),
+        ('20000000-0000-4000-8000-000000000002', 'Drama'),
+        ('20000000-0000-4000-8000-000000000002', 'Mystery'),
+        ('20000000-0000-4000-8000-000000000003', 'Sci-Fi'),
+        ('20000000-0000-4000-8000-000000000003', 'Adventure'),
+        ('20000000-0000-4000-8000-000000000004', 'Adventure'),
+        ('20000000-0000-4000-8000-000000000004', 'Mystery'),
+        ('20000000-0000-4000-8000-000000000005', 'Drama'),
+        ('20000000-0000-4000-8000-000000000006', 'Mystery'),
+        ('20000000-0000-4000-8000-000000000006', 'Drama'),
+        ('20000000-0000-4000-8000-000000000007', 'Sci-Fi'),
+        ('20000000-0000-4000-8000-000000000008', 'Drama'),
+        ('20000000-0000-4000-8000-000000000008', 'Mystery'),
+        ('20000000-0000-4000-8000-000000000009', 'Adventure'),
+        ('20000000-0000-4000-8000-000000000010', 'Sci-Fi'),
+        ('20000000-0000-4000-8000-000000000010', 'Drama')
+) AS seed(movie_id, tag_name)
+JOIN tag ON tag.name = seed.tag_name;
+
+The tags Drama, Mystery, Sci-Fi, and Adventure must already exist; missing tags are simply skipped. Run this once—repeating it will conflict with the movie IDs.
+
+now make me 1000+ examples
+For H2, this generates 1,100 movies, each with a random release date and 1–3 randomly selected existing tags:
+
+-- Generate 1,100 movies.
+-- The shared UUID prefix identifies this batch for tag assignment.
+INSERT INTO movie (id, title, release_date)
+SELECT
+    CAST(
+        '30000000-0000-4000-8000-' ||
+        LPAD(CAST(x AS VARCHAR), 12, '0')
+        AS UUID
+    ),
+    'Sample Movie ' || CAST(x AS VARCHAR),
+    DATEADD(
+        'DAY',
+        CAST(FLOOR(RAND() * 13149) AS INTEGER),
+        DATE '1990-01-01'
+    )
+FROM SYSTEM_RANGE(1, 1100);
+
+-- Assign up to three distinct tags to each generated movie.
+-- If fewer tags exist, use as many as are available.
+INSERT INTO movie_tag (movie_id, tag_id)
+SELECT movie_id, tag_id
+FROM (
+    SELECT
+        m.id AS movie_id,
+        t.id AS tag_id,
+        m.tag_count,
+        ROW_NUMBER() OVER (
+            PARTITION BY m.id
+            ORDER BY RAND()
+        ) AS tag_position
+    FROM (
+        SELECT
+            id,
+            1 + CAST(FLOOR(RAND() * 3) AS INTEGER) AS tag_count
+        FROM movie
+        WHERE CAST(id AS VARCHAR)
+              LIKE '30000000-0000-4000-8000-%'
+    ) m
+    CROSS JOIN tag t
+) assignments
+WHERE tag_position <= tag_count;
+
+Run this once to avoid duplicate IDs. At 25 movies per page, these new movies fill 44 pages.
+
